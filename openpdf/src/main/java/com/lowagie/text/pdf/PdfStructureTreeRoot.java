@@ -59,6 +59,7 @@ import java.util.Map;
  */
 public class PdfStructureTreeRoot extends PdfDictionary {
 
+    private final HashMap<Integer, Integer> pageMap = new HashMap<>();
     private final Map<Integer, PdfArray> parentTree = new HashMap<>();
     private final PdfIndirectReference reference;
 
@@ -106,8 +107,29 @@ public class PdfStructureTreeRoot extends PdfDictionary {
         return this.reference;
     }
 
+    /**
+     * Gets the index of a page in the parent tree.
+     * @param page the number of the page.
+     * @return the parent tree index.
+     */
+    public PdfNumber getPageParentTreeIndex(int page) {
+        return new PdfNumber(allocatePageIndex(page));
+    }
+
+    private int allocatePageIndex(int page) {
+        Integer idx = pageMap.get(page);
+        if (idx == null) {
+            /* allocate the next free index in the ParentTree to this page */
+            idx = Integer.valueOf(parentTree.size());
+            parentTree.put(idx, null);
+            pageMap.put(page, idx);
+        }
+
+        return idx;
+    }
+
     void setPageMark(int page, PdfIndirectReference reference) {
-        Integer i = page;
+        Integer i = allocatePageIndex(page);
         PdfArray ar = parentTree.get(i);
         if (ar == null) {
             ar = new PdfArray();
@@ -116,15 +138,28 @@ public class PdfStructureTreeRoot extends PdfDictionary {
         ar.add(reference);
     }
 
+    public PdfNumber addObjectRef(PdfIndirectReference struc) {
+        Integer i = Integer.valueOf(parentTree.size());
+        /* could store without using an array - change PdfStructureTreeRoot.buildTree */
+        PdfArray ar = new PdfArray();
+        ar.add(struc);
+        parentTree.put(i, ar);
+
+        return new PdfNumber(i);
+    }
+
     private void nodeProcess(PdfDictionary dictionary, PdfIndirectReference reference)
             throws IOException {
         PdfObject obj = dictionary.get(PdfName.K);
-        if (obj != null && obj.isArray() && !((PdfArray) obj).getElements().get(0).isNumber()) {
+        if (obj != null && obj.isArray() /*&& !((PdfArray) obj).getElements().get(0).isNumber()*/) {
             PdfArray ar = (PdfArray) obj;
             for (int k = 0; k < ar.size(); ++k) {
-                PdfStructureElement e = (PdfStructureElement) ar.getDirectObject(k);
-                ar.set(k, e.getReference());
-                nodeProcess(e, e.getReference());
+                PdfObject node = ar.getDirectObject(k);
+                if (node instanceof PdfStructureElement) {
+                    PdfStructureElement e = (PdfStructureElement) node;
+                    ar.set(k, e.getReference());
+                    nodeProcess(e, e.getReference());
+                }
             }
         }
         if (reference != null) {

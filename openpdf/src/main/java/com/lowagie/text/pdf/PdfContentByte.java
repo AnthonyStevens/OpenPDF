@@ -3240,11 +3240,10 @@ public class PdfContentByte {
                 ar.add(obj);
                 struc.put(PdfName.K, ar);
             }
-            else if (obj.isArray()) {
+            else if (obj.isArray())
                 ar = (PdfArray)obj;
-                if (!(ar.getPdfObject(0)).isNumber())
-                    throw new IllegalArgumentException(MessageLocalization.getComposedMessage("the.structure.has.kids"));
-            }
+//                if (!(ar.getPdfObject(0)).isNumber())
+//                    throw new IllegalArgumentException(MessageLocalization.getComposedMessage("the.structure.has.kids"));
             else
                 throw new IllegalArgumentException(MessageLocalization.getComposedMessage("unknown.object.at.k.1", obj.getClass().toString()));
             PdfDictionary dic = new PdfDictionary(PdfName.MCR);

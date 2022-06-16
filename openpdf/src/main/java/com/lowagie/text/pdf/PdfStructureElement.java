@@ -117,8 +117,15 @@ public class PdfStructureElement extends PdfDictionary {
     }
     
     void setPageMark(int page, int mark) {
-        if (mark >= 0)
-            put(PdfName.K, new PdfNumber(mark));
+//        if (mark >= 0)
+//            put(PdfName.K, new PdfNumber(mark));
+        if (mark >= 0) {
+            PdfArray kids = (PdfArray) get(PdfName.K);
+            if (kids == null)
+                put(PdfName.K, kids = new PdfArray());
+            kids.add(new PdfNumber(mark));
+        }
+
         top.setPageMark(page, reference);
     }
     
@@ -129,5 +136,21 @@ public class PdfStructureElement extends PdfDictionary {
      */    
     public PdfIndirectReference getReference() {
         return this.reference;
+    }
+
+    /**
+     * Add an annotation into the content of this structure level.
+     * @param annot the annotation to add.
+     */
+    public void addAnnotation(PdfAnnotation annot) {
+        PdfDictionary objref = new PdfDictionary();
+        objref.put(PdfName.TYPE, PdfName.OBJR);
+        objref.put(PdfName.OBJ, annot.getIndirectReference());
+
+        annot.put(PdfName.TYPE, PdfName.ANNOT); /* not required? */
+        annot.put(PdfName.STRUCTPARENT, top.addObjectRef(reference));
+
+        PdfArray kids = (PdfArray) get(PdfName.K);
+        kids.add(objref);
     }
 }

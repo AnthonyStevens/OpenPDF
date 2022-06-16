@@ -993,8 +993,11 @@ public class PdfDocument extends Document {
             }
 
             // [F12] we add tag info
-            if (writer.isTagged())
-                page.put(PdfName.STRUCTPARENTS, new PdfNumber(writer.getCurrentPageNumber() - 1));
+            if (writer.isTagged()) {
+                PdfStructureTreeRoot structRoot = writer.getStructureTreeRoot();
+                int pgNum = writer.getCurrentPageNumber() - 1;
+                page.put(PdfName.STRUCTPARENTS, structRoot.getPageParentTreeIndex(pgNum));
+            }
 
             if (text.size() > textEmptySize)
                 text.endText();
